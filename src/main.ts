@@ -1,43 +1,49 @@
-//import "./style.css";
+import "./style.css";
+
+import { GuessingGame } from "./guessing-game";
 
 const btnAnswer = document.getElementById("btnAnswer");
-let minGuess = 1;
-let maxGuess = 10;
+const btnRestart = document.getElementById("btnRestart");
+const userMessageDiv = document.getElementById("userMessage");
+const errorDiv = document.getElementById("errorMessage");
+const settings = document.getElementById(
+	"gameSettings",
+) as HTMLSelectElement | null;
 
-function validateGuess(guess: number | null): boolean {
-	const errorDiv = document.getElementById("errorMessage");
+let maxGuess = 100;
+let numberOfGuesses = 5;
+let game = new GuessingGame(maxGuess, numberOfGuesses);
 
-	if (guess == null) {
-		errorDiv!.innerText = "Please enter a number";
-		return false;
-	}
-
-	if (guess < minGuess || guess > maxGuess) {
-		errorDiv!.innerText = `Please enter a number between ${minGuess} and ${maxGuess}`;
-		return false;
-	}
-
-	if (!Number.isInteger(guess)) {
-		errorDiv!.innerText = "Please enter a whole number";
-		return false;
-	}
-
-	return true;
-}
-
+// leave here
 function handleAnswerClick() {
+	//debugger;
+
+	if (game.isGameOver) {
+		// game over, nothing to do, return
+		return;
+	}
+
+	errorDiv!.innerText = "";
+	userMessageDiv!.innerText = "";
+
 	let answer = getUserAnswer();
-	validateGuess(answer);
 
-	console.log("Answer clicked!", secretNumber, answer);
+	let result = game.guess(answer);
+
+	if (result.isError) {
+		errorDiv!.innerText = result.message;
+	} else {
+		userMessageDiv!.innerText = result.message;
+	}
 }
 
-function getSecretNumber(maxNumber: number = 10): number {
-	let r = Math.random();
-	r = r * maxNumber + 1;
-	r = Math.floor(r);
-	return r;
+btnAnswer?.addEventListener("click", handleAnswerClick);
+
+function handleRestartClick() {
+	userMessageDiv!.innerText = "New game started!";
+	game = new GuessingGame(maxGuess, 3);
 }
+btnRestart?.addEventListener("click", handleRestartClick);
 
 function getUserAnswer(): number | null {
 	const answerElement = document.getElementById(
@@ -54,10 +60,34 @@ function getUserAnswer(): number | null {
 		return null;
 	}
 
+	answerElement.value = "";
+	answerElement.focus();
 	return answer;
 }
 
-let secretNumber = getSecretNumber();
-let userAnswer = 0;
+function handleGameSettingsChange() {
+	let selection = settings!.value;
+	switch (selection) {
+		case "10-3":
+			maxGuess = 10;
+			numberOfGuesses = 3;
+			break;
+		case "50-5":
+			maxGuess = 50;
+			numberOfGuesses = 5;
+			break;
+		case "100-10":
+			maxGuess = 100;
+			numberOfGuesses = 10;
+			break;
+		case "1000-20":
+			maxGuess = 1000;
+			numberOfGuesses = 20;
+			break;
+	}
 
-btnAnswer?.addEventListener("click", handleAnswerClick);
+	userMessageDiv!.innerText = `Starting new game! You get ${numberOfGuesses} guesses to guess my number between 1 and ${maxGuess}`;
+	game = new GuessingGame(maxGuess, numberOfGuesses);
+}
+
+settings?.addEventListener("change", handleGameSettingsChange);
